@@ -139,7 +139,7 @@ endif
 ifeq ($(THREAD_MODEL), posix)
 # Specify the tls-model until LLVM 15 is released (which should contain
 # https://reviews.llvm.org/D130053).
-CFLAGS += --target=wasm32-wasi-pthread -mthread-model posix -pthread -ftls-model=local-exec
+CFLAGS += --target=wasm32-wasi-threads -mthread-model posix -pthread -ftls-model=local-exec
 # NOTE: `--export-memory` is invalid until https://reviews.llvm.org/D135898 is
 # available in a released version of `wasm-ld`; this has not happened yet so
 # a built-from-latest-source Clang is necessary.
