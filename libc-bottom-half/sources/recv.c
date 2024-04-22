@@ -6,6 +6,7 @@
 #include <wasi/api.h>
 #include <wasi/descriptor_table.h>
 #include <wasi/sockets_utils.h>
+#include <wasi/wasip2_allocator.h>
 
 static ssize_t tcp_recvfrom(tcp_socket_t *socket, uint8_t *buffer,
 			    size_t length, int flags, struct sockaddr *addr,
@@ -42,6 +43,9 @@ static ssize_t tcp_recvfrom(tcp_socket_t *socket, uint8_t *buffer,
 
 	streams_borrow_input_stream_t rx_borrow =
 		streams_borrow_input_stream(connection.input);
+
+	wasip2_allocator_set(buffer, length);
+
 	while (true) {
 		wasip2_list_u8_t result;
 		streams_stream_error_t error;
@@ -52,13 +56,17 @@ static ssize_t tcp_recvfrom(tcp_socket_t *socket, uint8_t *buffer,
 			} else {
 				// TODO wasi-sockets: wasi-sockets has no way to recover TCP stream errors yet.
 				errno = EPIPE;
+				wasip2_allocator_reset();
 				return -1;
 			}
 		}
 
 		if (result.len) {
-			memcpy(buffer, result.ptr, result.len);
-			wasip2_list_u8_free(&result);
+			if (!wasip2_allocator_is_buffer(result.ptr)) {
+				memcpy(buffer, result.ptr, result.len);
+				wasip2_list_u8_free(&result);
+			}
+			wasip2_allocator_reset();
 			return result.len;
 		} else if (should_block) {
 			poll_borrow_pollable_t pollable_borrow =
@@ -66,6 +74,7 @@ static ssize_t tcp_recvfrom(tcp_socket_t *socket, uint8_t *buffer,
 			poll_method_pollable_block(pollable_borrow);
 		} else {
 			errno = EWOULDBLOCK;
+			wasip2_allocator_reset();
 			return -1;
 		}
 	}

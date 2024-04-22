@@ -1429,6 +1429,10 @@ vwprintf
 vwscanf
 wall_clock_now
 wall_clock_resolution
+wasip2_allocator_alloc
+wasip2_allocator_is_buffer
+wasip2_allocator_reset
+wasip2_allocator_set
 wasip2_list_string_free
 wasip2_list_tuple2_string_string_free
 wasip2_list_u32_free
